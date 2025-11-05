@@ -9,10 +9,14 @@ const aiRoutes = require("./routes/aiRoutes");
 const exportRoutes = require("./routes/exportRoutes");
 
 const app = express();
+const allowedOrigins=[
+  "https://ai-ebook-creation.vercel.app/",
+  "http://localhost:5173/"
+]
 
 app.use(
   cors({
-    origin: "http://localhost:5173/",
+     origin:allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
