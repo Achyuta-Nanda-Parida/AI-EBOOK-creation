@@ -9,19 +9,40 @@ const aiRoutes = require("./routes/aiRoutes");
 const exportRoutes = require("./routes/exportRoutes");
 
 const app = express();
-const allowedOrigins=[
-  "https://ai-ebook-creation.vercel.app/",
-  "http://localhost:5173/"
-]
+// const allowedOrigins=[
+//   "https://ai-ebook-creation.vercel.app",
+//   "http://localhost:5173"
+// ]
+
+// app.use(
+//   cors({
+//      origin:allowedOrigins,
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//   })
+// );
+
+const allowedOrigins = [
+  "https://ai-ebook-creation.vercel.app",
+  "http://localhost:5173",
+];
 
 app.use(
   cors({
-     origin:allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 connectDB();
 

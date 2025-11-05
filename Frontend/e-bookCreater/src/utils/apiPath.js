@@ -22,4 +22,4 @@ export const API_PATHS = {
         DOC: "/api/export",
     },
 };
-export const BASE_URL = "http://localhost:8000";
+export const BASE_URL = "https://ai-ebook-creation.onrender.com";
