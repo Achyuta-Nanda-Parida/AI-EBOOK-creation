@@ -1,4 +1,4 @@
-import { BookOpen, Twitter, Linkedin, Github } from 'lucide-react';
+import { BookOpen, Linkedin, Github, Facebook } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -26,21 +26,21 @@ const Footer = () => {
        {/* Social Links */}
 <div className="flex items-center space-x-3 pt-2">
   <a
-    href="https://twitter.com"
+    href="https://www.facebook.com/share/1BpKW4BsCH/"
     className="w-9 h-9 bg-white/5 hover:bg-violet-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
     aria-label="Twitter"
   >
-    <Twitter className="w-5 h-5" />
+    <Facebook className="w-5 h-5" />
   </a>
   <a
-    href="https://linkedin.com"
+    href="https://www.linkedin.com/in/achyutananda-parida-921974297?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
     className="w-9 h-9 bg-white/5 hover:bg-violet-600 rounded-sm flex items-center justify-center transition-all duration-200 hover:scale-110"
     aria-label="LinkedIn"
   >
     <Linkedin className="w-5 h-5" />
   </a>
   <a
-    href="https://github.com"
+    href="https://github.com/Achyuta-Nanda-Parida"
     className="w-9 h-9 bg-white/5 hover:bg-violet-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
     aria-label="GitHub"
   >
