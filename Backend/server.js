@@ -11,7 +11,7 @@ const exportRoutes = require("./routes/exportRoutes");
 
 const app = express();
 const allowedOrigins = [
-  "ai-ebook-creation-mdve.vercel.app",
+  "https://ai-ebook-creation-mdve.vercel.app",
   "http://localhost:5173",
 ];
 
@@ -26,7 +26,6 @@ app.use(
         return callback(null, true);
       }
 
-      // Reject others
       return callback(new Error("Not allowed by CORS"));
     },
 
@@ -36,7 +35,6 @@ app.use(
   })
 );
 connectDB();
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -44,22 +42,19 @@ app.use(
   "/backend/uploads",
   express.static(path.join(__dirname, "uploads"))
 );
-
-
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/export", exportRoutes);
 
 app.use((err, req, res, next) => {
-  console.error("Server Error:", err.message);
+  console.error("Server Error:", err);
 
   res.status(500).json({
     success: false,
     message: err.message || "Internal Server Error",
   });
 });
-
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
