@@ -11,9 +11,7 @@ const exportRoutes = require("./routes/exportRoutes");
 
 const app = express();
 const allowedOrigins = [
-  "https://ai-ebook-creation.vercel.app",
-  "https://ai-ebook-creation-git-main-achyuta-nanda-paridas-projects.vercel.app",
-  "https://ai-ebook-creation-ba69g0x37-achyuta-nanda-paridas-projects.vercel.app",
+  "ai-ebook-creation-mdve.vercel.app",
   "http://localhost:5173",
 ];
 
