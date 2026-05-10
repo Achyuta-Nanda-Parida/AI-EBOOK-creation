@@ -74,7 +74,7 @@ try {
     console.error("Error generating chapter:", error);
     res
       .status(500)
-      .json({ message: "Server error during AI chapter generation" });
+      .json({ message: error.message });
   }
 };
 

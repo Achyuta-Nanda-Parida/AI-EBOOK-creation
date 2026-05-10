@@ -24,7 +24,7 @@ const app = express();
 // );
 
 const allowedOrigins = [
-  "https://ai-ebook-creation.vercel.app",
+  "ai-ebook-creation.vercel.app",
   "http://localhost:5173",
 ];
 
