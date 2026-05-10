@@ -177,19 +177,19 @@ Example:
 `;
 
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+  {
+    contents: [
       {
-        contents: [
+        parts: [
           {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
+            text: prompt,
           },
         ],
-      }
-    );
+      },
+    ],
+  }
+);
 
     const text =
       response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
