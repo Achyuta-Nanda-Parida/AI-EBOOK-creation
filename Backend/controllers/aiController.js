@@ -1,358 +1,134 @@
-// const  { GoogleGenAI } = require("@google/genai");
+const  { GoogleGenAI } = require("@google/genai");
 
-// const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-// const generateOutline = async (req, res) => {
-//   try {
-//     const { topic, style, numChapters, description } = req.body;
-
-//     if (!topic) {
-//       return res.status(400).json({ message: "Please provide a topic" });
-//     }
-
-//    const prompt = `You are an expert book outline generator. Create a comprehensive book outline based on the following requirements:
-
-// Topic: "${topic}"
-// ${description ? `Description: ${description}` : ""}
-// Writing Style: ${style}
-// Number of Chapters: ${numChapters || 5}
-
-// Requirements:
-// 1. Generate exactly ${numChapters || 5} chapters.
-// 2. Each chapter title should be clear, engaging, and follow a logical progression.
-// 3. Each chapter description should be 2-3 sentences explaining what the chapter covers.
-// 4. Ensure chapters build upon each other coherently.
-// 5. Match the "${style}" writing style in your titles and descriptions
-
-// Output Format:
-// Return only a valid JSON array with no additional text, markdown, or formatting. Each object must have exactly two keys: "title" and "description".
-
-// Example structure:
-// [
-//   {
-//     "title": "Chapter 1: Introduction to the Topic",
-//     "description": "A comprehensive overview introducing the main concepts. Sets the foundation for understanding the subject matter."
-//   },
-//   {
-//     "title": "Chapter 2: Core Principles",
-//     "description": "Explores the fundamental principles and theories. Provides detailed examples and real-world applications."
-//   },
-//   // ... more chapters
-// ]
-//   Generate the outline now:`;
-
-//     const response = await ai.models.generateContent({
-//       model: "gemini-2.5-flash-lite",
-//       contents: prompt,
-//     });
-
-//     const text = response.text;
-
-//  const startIndex = text.indexOf("[");
-// const endIndex = text.lastIndexOf("]");
-
-// if (startIndex === -1 || endIndex === -1) {
-//   console.error("Could not find JSON array in AI response:", text);
-//   return res
-//     .status(500)
-//     .json({ message: "Failed to parse AI response, no JSON array found." });
-// }
-
-// const jsonString = text.substring(startIndex, endIndex + 1);
-
-// try {
-//   const outline = JSON.parse(jsonString);
-//   res.status(200).json({ outline });
-// } catch (e) {
-//   console.error("Failed to parse AI response:", jsonString);
-//   res.status(500).json({
-//     message: "Failed to generate a valid outline. The AI response was not valid JSON.",
-//   });
-// }
-
-
-//   }catch (error) {
-//     console.error("Error generating chapter:", error);
-//     res
-//       .status(500)
-//       .json({ message: error.message });
-//   }
-// };
-
-
-// const generateChapterContent = async (req, res) => {
-//   try {
-//     const { chapterTitle, chapterDescription, style } = req.body;
-
-//     if (!chapterTitle) {
-//       return res
-//         .status(400)
-//         .json({ message: "Please provide a chapter title" });
-//     }
-
-//       const prompt = `You are an expert writer specializing in ${style} content. Write a complete chapter for a book with the following specifications:
-
-// Chapter Title:"${chapterTitle}"
-// ${chapterDescription ? `chapter Description : ${chapterDescription}`:''}
-// Writing Style: ${style}
-// Target Length: comprehensive and detailed (aim for 1500-2500 words)
-
-// Requirements:
-// 1. Write in a ${style.toLowerCase()} tone throughout the chapter
-// 2. Structure the content with clear sections and smooth transitions
-// 3. Include relevant examples, explanations, or anecdotes as appropriate for the style
-// 4. Ensure the content flows logically from introduction to conclusion
-// 5. Make the content engaging and valuable to readers
-// ${chapterDescription ? '6.Cover all points mentioned in the chapter description: ${chapterDescription}' : ''}
-
-// Format Guidelines:
-// - Start with a compelling opening paragraph
-// - Use clear paragraph breaks for readability
-// - Include subheadings if appropriate for the content length
-// - End with a strong conclusion or transition to the next chapter
-// - Write in plain text without markdown formatting
-
-// Begin writing the chapter content now:`;
-
-
-//     const response = await ai.models.generateContent({
-//       model: "gemini-2.5-flash-lite",
-//       contents: prompt,
-//     });
-
-//     res.status(200).json({ content: response.text });
-//   } catch (error) {
-//     console.error("Error generating chapter:", error);
-//     res
-//       .status(500)
-//       .json({ message: "Server error during AI chapter generation" });
-//   }
-// };
-// module.exports = {
-//   generateOutline,
-//   generateChapterContent,
-// };
-
-
-require("dotenv").config();
-const axios = require("axios");
-
-/* --------------------------------------------------
-   SINGLE API KEY
--------------------------------------------------- */
-
-const API_KEY = process.env.GEMINI_API_KEY;
-
-/* --------------------------------------------------
-   MODELS
--------------------------------------------------- */
-const outlineModels = [
-  "gemini-2.0-flash",
-];
-
-const chapterModels = [
-  "gemini-2.0-flash",
-];
-
-/* --------------------------------------------------
-   GEMINI GENERATION FUNCTION
--------------------------------------------------- */
-
-async function generateWithGemini(prompt, models) {
-  for (const model of models) {
-    try {
-      console.log(`Trying model: ${model}`);
-
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
-        {
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          },
-        }
-      );
-
-      const text =
-        response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "";
-
-      console.log(`Success using ${model}`);
-
-      return text;
-    } catch (error) {
-      console.log(
-        `${model} failed ->`,
-        error.response?.data?.error?.message ||
-          error.message
-      );
-
-      // small retry delay
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000)
-      );
-    }
-  }
-
-  throw new Error("All Gemini models failed");
-}
-
-/* --------------------------------------------------
-   GENERATE OUTLINE
--------------------------------------------------- */
-
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const generateOutline = async (req, res) => {
   try {
-    const {
-      topic,
-      style,
-      numChapters,
-      description,
-    } = req.body;
+    const { topic, style, numChapters, description } = req.body;
 
     if (!topic) {
-      return res.status(400).json({
-        message: "Please provide a topic",
-      });
+      return res.status(400).json({ message: "Please provide a topic" });
     }
 
-    const prompt = `
-You are an expert book outline generator.
+   const prompt = `You are an expert book outline generator. Create a comprehensive book outline based on the following requirements:
 
 Topic: "${topic}"
-
 ${description ? `Description: ${description}` : ""}
-
-Writing Style: ${style}
-
+Writing Style: ${style}   
 Number of Chapters: ${numChapters || 5}
 
 Requirements:
-1. Generate exactly ${
-      numChapters || 5
-    } chapters.
-2. Each chapter title should be engaging.
-3. Each chapter description should be 2-3 sentences.
-4. Follow logical chapter progression.
+1. Generate exactly ${numChapters || 5} chapters.
+2. Each chapter title should be clear, engaging, and follow a logical progression.
+3. Each chapter description should be 2-3 sentences explaining what the chapter covers.
+4. Ensure chapters build upon each other coherently.
+5. Match the "${style}" writing style in your titles and descriptions
 
-Output:
-Return ONLY valid JSON array.
-`;
+Output Format:
+Return only a valid JSON array with no additional text, markdown, or formatting. Each object must have exactly two keys: "title" and "description".
 
-    const text = await generateWithGemini(
-      prompt,
-      outlineModels
-    );
+Example structure:
+[
+  {
+    "title": "Chapter 1: Introduction to the Topic",
+    "description": "A comprehensive overview introducing the main concepts. Sets the foundation for understanding the subject matter."
+  },
+  {
+    "title": "Chapter 2: Core Principles",
+    "description": "Explores the fundamental principles and theories. Provides detailed examples and real-world applications."
+  },
+  // ... more chapters
+]
+  Generate the outline now:`;
 
-    const startIndex = text.indexOf("[");
-    const endIndex = text.lastIndexOf("]");
-
-    if (
-      startIndex === -1 ||
-      endIndex === -1
-    ) {
-      return res.status(500).json({
-        message:
-          "Failed to parse AI response",
-      });
-    }
-
-    const jsonString = text.substring(
-      startIndex,
-      endIndex + 1
-    );
-
-    const outline = JSON.parse(jsonString);
-
-    res.status(200).json({
-      outline,
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      contents: prompt,
     });
-  } catch (error) {
-    console.error(error.message);
 
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
+    const text = response.text;
 
-/* --------------------------------------------------
-   GENERATE CHAPTER CONTENT
--------------------------------------------------- */
+ const startIndex = text.indexOf("[");
+const endIndex = text.lastIndexOf("]");
 
-const generateChapterContent = async (
-  req,
-  res
-) => {
-  try {
-    const {
-      chapterTitle,
-      chapterDescription,
-      style,
-    } = req.body;
-
-    if (!chapterTitle) {
-      return res.status(400).json({
-        message:
-          "Please provide a chapter title",
-      });
-    }
-
-    const prompt = `
-You are an expert writer.
-
-Chapter Title: "${chapterTitle}"
-
-${
-  chapterDescription
-    ? `Description: ${chapterDescription}`
-    : ""
+if (startIndex === -1 || endIndex === -1) {
+  console.error("Could not find JSON array in AI response:", text);
+  return res
+    .status(500)
+    .json({ message: "Failed to parse AI response, no JSON array found." });
 }
 
-Writing Style: ${style}
+const jsonString = text.substring(startIndex, endIndex + 1);
 
-Requirements:
-1. Detailed explanation
-2. Smooth transitions
-3. Clear sections
-4. Add examples
-5. 800-1200 words
-6. Plain text only
-`;
+try {
+  const outline = JSON.parse(jsonString);
+  res.status(200).json({ outline });
+} catch (e) {
+  console.error("Failed to parse AI response:", jsonString);
+  res.status(500).json({
+    message: "Failed to generate a valid outline. The AI response was not valid JSON.",
+  });
+}
 
-    const content =
-      await generateWithGemini(
-        prompt,
-        chapterModels
-      );
 
-    res.status(200).json({
-      content,
-    });
-  } catch (error) {
-    console.error(error.message);
-
-    res.status(500).json({
-      message:
-        "Server error during AI generation",
-    });
+  }catch (error) {
+    console.error("Error generating chapter:", error);
+    res
+      .status(500)
+      .json({ message: error.message });
   }
 };
 
-/* --------------------------------------------------
-   EXPORTS
--------------------------------------------------- */
 
+const generateChapterContent = async (req, res) => {
+  try {
+    const { chapterTitle, chapterDescription, style } = req.body;
+
+    if (!chapterTitle) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a chapter title" });
+    }
+
+      const prompt = `You are an expert writer specializing in ${style} content. Write a complete chapter for a book with the following specifications:
+
+Chapter Title:"${chapterTitle}"
+${chapterDescription ? `chapter Description : ${chapterDescription}`:''}
+Writing Style: ${style}
+Target Length: comprehensive and detailed (aim for 1500-2500 words)
+
+Requirements:
+1. Write in a ${style.toLowerCase()} tone throughout the chapter
+2. Structure the content with clear sections and smooth transitions
+3. Include relevant examples, explanations, or anecdotes as appropriate for the style
+4. Ensure the content flows logically from introduction to conclusion
+5. Make the content engaging and valuable to readers
+${chapterDescription ? '6.Cover all points mentioned in the chapter description: ${chapterDescription}' : ''}
+
+Format Guidelines:
+- Start with a compelling opening paragraph
+- Use clear paragraph breaks for readability
+- Include subheadings if appropriate for the content length
+- End with a strong conclusion or transition to the next chapter
+- Write in plain text without markdown formatting
+
+Begin writing the chapter content now:`;
+
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      contents: prompt,
+    });
+
+    res.status(200).json({ content: response.text });
+  } catch (error) {
+    console.error("Error generating chapter:", error);
+    res
+      .status(500)
+      .json({ message: "Server error during AI chapter generation" });
+  }
+};
 module.exports = {
   generateOutline,
   generateChapterContent,
 };
+
