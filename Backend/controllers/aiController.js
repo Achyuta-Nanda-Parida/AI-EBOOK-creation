@@ -40,12 +40,17 @@ Example structure:
 ]
   Generate the outline now:`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-    });
+    // const response = await ai.models.generateContent({
+    //   model: "gemini-2.5-flash-lite",
+    //   contents: prompt,
+    // });
 
-    const text = response.text;
+    const response = await ai.models.generateContent({
+  model: "gemini-1.5-flash",
+  contents: prompt,
+});
+    // const text = response.text;
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
  const startIndex = text.indexOf("[");
 const endIndex = text.lastIndexOf("]");
@@ -102,7 +107,7 @@ Requirements:
 3. Include relevant examples, explanations, or anecdotes as appropriate for the style
 4. Ensure the content flows logically from introduction to conclusion
 5. Make the content engaging and valuable to readers
-${chapterDescription ? '6.Cover all points mentioned in the chapter description: ${chapterDescription}' : ''}
+${chapterDescription ? `6. Cover all points mentioned in the chapter description: ${chapterDescription}` : ''}
 
 Format Guidelines:
 - Start with a compelling opening paragraph
@@ -114,10 +119,15 @@ Format Guidelines:
 Begin writing the chapter content now:`;
 
 
+    // const response = await ai.models.generateContent({
+    //   model: "gemini-2.5-flash-lite",
+    //   contents: prompt,
+    // });
+
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-    });
+  model: "gemini-1.5-flash",
+  contents: prompt,
+});
 
     res.status(200).json({ content: response.text });
   } catch (error) {
