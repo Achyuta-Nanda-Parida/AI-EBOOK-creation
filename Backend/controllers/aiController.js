@@ -145,16 +145,11 @@ const API_KEY = process.env.GEMINI_API_KEY;
 /* --------------------------------------------------
    MODELS
 -------------------------------------------------- */
-
 const outlineModels = [
-  "gemini-2.5-flash-lite",
   "gemini-2.0-flash",
-  "gemini-1.5-flash",
 ];
 
 const chapterModels = [
-  "gemini-1.5-flash",
-  "gemini-2.5-flash-lite",
   "gemini-2.0-flash",
 ];
 
