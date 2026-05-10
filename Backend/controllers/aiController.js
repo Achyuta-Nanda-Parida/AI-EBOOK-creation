@@ -133,75 +133,141 @@
 // };
 
 
+require("dotenv").config();
 const axios = require("axios");
 
-/* ---------------- Generate Outline ---------------- */
+/* --------------------------------------------------
+   SINGLE API KEY
+-------------------------------------------------- */
+
+const API_KEY = process.env.GEMINI_API_KEY;
+
+/* --------------------------------------------------
+   MODELS
+-------------------------------------------------- */
+
+const outlineModels = [
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+];
+
+const chapterModels = [
+  "gemini-1.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash",
+];
+
+/* --------------------------------------------------
+   GEMINI GENERATION FUNCTION
+-------------------------------------------------- */
+
+async function generateWithGemini(prompt, models) {
+  for (const model of models) {
+    try {
+      console.log(`Trying model: ${model}`);
+
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`,
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          },
+        }
+      );
+
+      const text =
+        response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "";
+
+      console.log(`Success using ${model}`);
+
+      return text;
+    } catch (error) {
+      console.log(
+        `${model} failed ->`,
+        error.response?.data?.error?.message ||
+          error.message
+      );
+
+      // small retry delay
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000)
+      );
+    }
+  }
+
+  throw new Error("All Gemini models failed");
+}
+
+/* --------------------------------------------------
+   GENERATE OUTLINE
+-------------------------------------------------- */
 
 const generateOutline = async (req, res) => {
   try {
-    const { topic, style, numChapters, description } = req.body;
+    const {
+      topic,
+      style,
+      numChapters,
+      description,
+    } = req.body;
 
     if (!topic) {
-      return res
-        .status(400)
-        .json({ message: "Please provide a topic" });
+      return res.status(400).json({
+        message: "Please provide a topic",
+      });
     }
 
     const prompt = `
 You are an expert book outline generator.
 
-Create a comprehensive book outline based on the following requirements:
-
 Topic: "${topic}"
+
 ${description ? `Description: ${description}` : ""}
+
 Writing Style: ${style}
+
 Number of Chapters: ${numChapters || 5}
 
 Requirements:
-1. Generate exactly ${numChapters || 5} chapters.
-2. Each chapter title should be clear and engaging.
+1. Generate exactly ${
+      numChapters || 5
+    } chapters.
+2. Each chapter title should be engaging.
 3. Each chapter description should be 2-3 sentences.
-4. Chapters should follow logical progression.
-5. Match the "${style}" writing style.
+4. Follow logical chapter progression.
 
-Output Format:
-Return ONLY a valid JSON array.
-
-Example:
-[
-  {
-    "title": "Chapter 1: Introduction",
-    "description": "Overview of the topic."
-  }
-]
+Output:
+Return ONLY valid JSON array.
 `;
 
-    const response = await axios.post(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-  {
-    contents: [
-      {
-        parts: [
-          {
-            text: prompt,
-          },
-        ],
-      },
-    ],
-  }
-);
-
-    const text =
-      response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const text = await generateWithGemini(
+      prompt,
+      outlineModels
+    );
 
     const startIndex = text.indexOf("[");
     const endIndex = text.lastIndexOf("]");
 
-    if (startIndex === -1 || endIndex === -1) {
-      console.error("Invalid AI response:", text);
-
+    if (
+      startIndex === -1 ||
+      endIndex === -1
+    ) {
       return res.status(500).json({
-        message: "Failed to parse AI response.",
+        message:
+          "Failed to parse AI response",
       });
     }
 
@@ -210,35 +276,28 @@ Example:
       endIndex + 1
     );
 
-    try {
-      const outline = JSON.parse(jsonString);
+    const outline = JSON.parse(jsonString);
 
-      res.status(200).json({ outline });
-    } catch (parseError) {
-      console.error("JSON Parse Error:", parseError);
-
-      res.status(500).json({
-        message:
-          "AI response was not valid JSON.",
-      });
-    }
+    res.status(200).json({
+      outline,
+    });
   } catch (error) {
-    console.error(
-      "Generate Outline Error:",
-      error.response?.data || error.message
-    );
+    console.error(error.message);
 
     res.status(500).json({
-      message:
-        error.response?.data?.error?.message ||
-        error.message,
+      message: error.message,
     });
   }
 };
 
-/* ---------------- Generate Chapter ---------------- */
+/* --------------------------------------------------
+   GENERATE CHAPTER CONTENT
+-------------------------------------------------- */
 
-const generateChapterContent = async (req, res) => {
+const generateChapterContent = async (
+  req,
+  res
+) => {
   try {
     const {
       chapterTitle,
@@ -254,63 +313,49 @@ const generateChapterContent = async (req, res) => {
     }
 
     const prompt = `
-You are an expert writer specializing in ${style} content.
-
-Write a complete chapter.
+You are an expert writer.
 
 Chapter Title: "${chapterTitle}"
+
 ${
   chapterDescription
-    ? `Chapter Description: ${chapterDescription}`
+    ? `Description: ${chapterDescription}`
     : ""
 }
 
 Writing Style: ${style}
 
 Requirements:
-1. Write in ${style} tone.
-2. Create detailed content.
-3. Use clear sections.
-4. Add examples if needed.
-5. Target 1500–2500 words.
-6. Plain text only.
+1. Detailed explanation
+2. Smooth transitions
+3. Clear sections
+4. Add examples
+5. 800-1200 words
+6. Plain text only
 `;
 
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-      }
-    );
-
     const content =
-      response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "";
+      await generateWithGemini(
+        prompt,
+        chapterModels
+      );
 
     res.status(200).json({
       content,
     });
   } catch (error) {
-    console.error(
-      "Generate Chapter Error:",
-      error.response?.data || error.message
-    );
+    console.error(error.message);
 
     res.status(500).json({
       message:
-        error.response?.data?.error?.message ||
         "Server error during AI generation",
     });
   }
 };
+
+/* --------------------------------------------------
+   EXPORTS
+-------------------------------------------------- */
 
 module.exports = {
   generateOutline,
