@@ -47,6 +47,7 @@ app.use(
 connectDB();
 
 app.use(express.json());
+app.use(express.urlencoded({extended:true}))
 
 app.use("/backend/uploads", express.static(path.join(__dirname, "uploads")));
 
