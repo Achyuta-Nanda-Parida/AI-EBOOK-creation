@@ -1,9 +1,15 @@
 const axios = require("axios");
 
+const MODEL = "openai/gpt-3.5-turbo";
+
 const generateOutline = async (req, res) => {
   try {
-    const { topic, style, numChapters, description } =
-      req.body;
+    const {
+      topic,
+      style,
+      numChapters,
+      description,
+    } = req.body;
 
     if (!topic) {
       return res.status(400).json({
@@ -11,14 +17,21 @@ const generateOutline = async (req, res) => {
       });
     }
 
+    console.log(
+      "API KEY:",
+      process.env.OPENROUTER_API_KEY
+        ? "Loaded ✅"
+        : "Missing ❌"
+    );
+
     const prompt = `
 You are an expert book outline generator.
 
-Create a book outline based on:
+Create a comprehensive book outline.
 
 Topic: "${topic}"
 ${description ? `Description: ${description}` : ""}
-Writing Style: ${style}
+Writing Style: ${style || "Educational"}
 Number of Chapters: ${numChapters || 5}
 
 Requirements:
@@ -26,35 +39,47 @@ Requirements:
       numChapters || 5
     } chapters.
 2. Each chapter title should be engaging.
-3. Each chapter description should be 2-3 sentences.
-4. Match the "${style}" writing style.
+3. Each chapter description should be 2–3 sentences.
+4. Chapters should follow logical progression.
+5. Match the "${
+      style || "Educational"
+    }" writing style.
 
+IMPORTANT:
 Return ONLY valid JSON array.
+No markdown.
+No explanation text.
 
-Format:
+Example:
 [
- {
-   "title":"Chapter title",
-   "description":"Chapter description"
- }
+  {
+    "title": "Chapter 1",
+    "description": "Description here"
+  }
 ]
 `;
 
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model:
-          "mistralai/mistral-7b-instruct",
+        model: MODEL,
+
         messages: [
           {
             role: "user",
             content: prompt,
           },
         ],
+
+        temperature: 0.7,
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "HTTP-Referer":
+            "http://localhost:5173",
+          "X-Title":
+            "AI Ebook Generator",
           "Content-Type":
             "application/json",
         },
@@ -62,11 +87,15 @@ Format:
     );
 
     const text =
-      response.data.choices[0].message
-        .content;
+      response.data.choices?.[0]
+        ?.message?.content || "";
 
-    const startIndex = text.indexOf("[");
-    const endIndex = text.lastIndexOf("]");
+    console.log("AI Response:", text);
+
+    const startIndex =
+      text.indexOf("[");
+    const endIndex =
+      text.lastIndexOf("]");
 
     if (
       startIndex === -1 ||
@@ -74,56 +103,58 @@ Format:
     ) {
       return res.status(500).json({
         message:
-          "No valid JSON found in AI response",
+          "AI did not return valid JSON.",
       });
     }
 
-    const jsonString = text.substring(
-      startIndex,
-      endIndex + 1
-    );
+    const jsonString =
+      text.substring(
+        startIndex,
+        endIndex + 1
+      );
 
     const outline =
       JSON.parse(jsonString);
 
-    res.status(200).json({
+    return res.status(200).json({
       outline,
     });
   } catch (error) {
     console.error(
       "Outline error:",
-      error.response?.data || error.message
+      error.response?.data ||
+        error.message
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       message:
+        error.response?.data?.error
+          ?.message ||
         "Failed to generate outline",
     });
   }
 };
 
-const generateChapterContent = async (
-  req,
-  res
-) => {
-  try {
-    const {
-      chapterTitle,
-      chapterDescription,
-      style,
-    } = req.body;
+const generateChapterContent =
+  async (req, res) => {
+    try {
+      const {
+        chapterTitle,
+        chapterDescription,
+        style,
+      } = req.body;
 
-    if (!chapterTitle) {
-      return res.status(400).json({
-        message:
-          "Please provide a chapter title",
-      });
-    }
+      if (!chapterTitle) {
+        return res.status(400).json({
+          message:
+            "Please provide a chapter title",
+        });
+      }
 
-    const prompt = `
+      const prompt = `
 You are an expert writer.
 
-Write a complete chapter.
+Write a complete detailed book chapter.
 
 Chapter Title:
 ${chapterTitle}
@@ -135,56 +166,68 @@ ${chapterDescription}`
     : ""
 }
 
-Writing Style: ${style}
+Writing Style:
+${style || "Educational"}
 
 Requirements:
 1. Write detailed content.
 2. Use smooth transitions.
-3. Make it engaging.
-4. Plain text only.
-
+3. Include examples where relevant.
+4. Make content engaging.
+5. Plain text only.
+6. Minimum 1000 words.
 `;
 
-    const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model:
-          "mistralai/mistral-7b-instruct",
-        messages: [
+      const response =
+        await axios.post(
+          "https://openrouter.ai/api/v1/chat/completions",
           {
-            role: "user",
-            content: prompt,
+            model: MODEL,
+
+            messages: [
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+
+            temperature: 0.7,
           },
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type":
-            "application/json",
-        },
-      }
-    );
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "HTTP-Referer":
+                "http://localhost:5173",
+              "X-Title":
+                "AI Ebook Generator",
+              "Content-Type":
+                "application/json",
+            },
+          }
+        );
 
-    const text =
-      response.data.choices[0].message
-        .content;
+      const text =
+        response.data.choices?.[0]
+          ?.message?.content || "";
 
-    res.status(200).json({
-      content: text,
-    });
-  } catch (error) {
-    console.error(
-      "Chapter error:",
-      error.response?.data || error.message
-    );
+      return res.status(200).json({
+        content: text,
+      });
+    } catch (error) {
+      console.error(
+        "Chapter error:",
+        error.response?.data ||
+          error.message
+      );
 
-    res.status(500).json({
-      message:
-        "Failed to generate chapter",
-    });
-  }
-};
+      return res.status(500).json({
+        message:
+          error.response?.data?.error
+            ?.message ||
+          "Failed to generate chapter",
+      });
+    }
+  };
 
 module.exports = {
   generateOutline,
