@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const MODEL = "openai/gpt-3.5-turbo";
+const MODEL = "openai/gpt-4o-mini";
 
 const generateOutline = async (req, res) => {
   try {
